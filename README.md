@@ -3,16 +3,15 @@
 
 A RESTful malware analysis engine and dashboard built to parse Windows PE/COFF binaries, calculate section-level Shannon entropy, and extract Import Address Tables (IAT) for heuristic analysis. 
 
-The backend is built with **Spring Boot 3** and **Java 21**, featuring an in-memory database caching layer to eliminate redundant parsing of previously analyzed files. The frontend is a zero-configuration, single-page dashboard inspired by classic "Skeet/Primordium" UI aesthetics, served directly from the Spring Boot static context.
+The backend is built with **Spring Boot 3** and **Java 21**, The frontend is a zero-configuration, single-page dashboard inspired by classic 2010 UI aesthetics, served directly from the Spring Boot static context.
 
 ## Features
 
 *   **PE Header Parsing:** Extracts core architecture, file size, and Entry Point (RVA) information.
 *   **Heuristic Detection (IAT):** Parses the Import Address Table and flags suspicious API calls (e.g., `VirtualAlloc`, `CreateRemoteThread`) commonly associated with process injection or evasion.
 *   **Memory Section Entropy:** Calculates Shannon entropy for individual PE sections to detect packed, compressed, or encrypted payloads (flagging sections with entropy > 7.2).
-*   **SHA-256 Caching Layer:** Integrates Spring Data JPA with an H2 in-memory database. Binaries are hashed upon upload; if the hash exists in the database, the cached analysis is instantly returned.
 *   **Defensive API Architecture:** Utilizes Spring `@RestControllerAdvice` for global exception handling, gracefully catching malformed binaries or memory out-of-bounds errors and returning standardized JSON error schemas.
-*   **Interactive Dashboard:** A compact, classic game-hacking-inspired dark theme UI featuring drag-and-drop uploads, live status indicators, and dynamic Microsoft Learn documentation links for all extracted APIs.
+*   **Interactive Dashboard:** A compact, classic dark theme UI featuring drag-and-drop uploads, live status indicators, and dynamic Microsoft Learn documentation links for all extracted APIs.
 
 ## Tech Stack
 
@@ -28,7 +27,7 @@ The backend is built with **Spring Boot 3** and **Java 21**, featuring an in-mem
 ### Installation & Execution
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/YOUR-USERNAME/AutomatedPEScanner.git](https://github.com/YOUR-USERNAME/AutomatedPEScanner.git)
+   git clone [https://github.com/1vrx/AutomatedPEScanner.git](https://github.com/1vrx/AutomatedPEScanner.git)
    cd AutomatedPEScanner
    ```
 
