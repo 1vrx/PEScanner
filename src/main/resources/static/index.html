@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pe_scanner.cc</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: #060606;
+            background-image: radial-gradient(circle at 50% 0%, #1a1c23, #060606 70%);
+            font-family: "Inter", -apple-system, sans-serif;
+            font-size: 11px;
+            color: #a1a1aa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Main Window */
+        .menu {
+            width: 780px;
+            height: 540px;
+            background: #111111;
+            border: 1px solid #27272a;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Top Skeet Line */
+        .menu::before {
+            content: "";
+            position: absolute;
+            top: -1px; left: -1px; right: -1px;
+            height: 2px;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            z-index: 10;
+        }
+
+        .title-bar {
+            padding: 8px 12px;
+            background: #0d0d0d;
+            border-bottom: 1px solid #1f1f22;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #e4e4e7;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .content-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar Tabs */
+        .tabs {
+            width: 130px;
+            border-right: 1px solid #1f1f22;
+            background: #0d0d0d;
+            padding: 12px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            color: #71717a;
+            text-transform: uppercase;
+            font-weight: 600;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            border-left: 2px solid transparent;
+            transition: 0.2s ease;
+        }
+
+        .tab:hover { color: #a1a1aa; }
+        .tab.active {
+            color: #e4e4e7;
+            background: #141417;
+            border-left: 2px solid #38bdf8;
+        }
+
+        /* Main Viewport */
+        .main-content {
+            flex: 1;
+            padding: 14px;
+            background: #111111;
+            position: relative;
+        }
+
+        .tab-pane {
+            display: none;
+            width: 100%;
+            height: 100%;
+            gap: 14px;
+        }
+        .tab-pane.active { display: flex; }
+
+        .col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            height: 100%;
+        }
+
+        /* Classic Groupbox */
+        .groupbox {
+            border: 1px solid #27272a;
+            border-radius: 3px;
+            padding: 14px 10px 10px;
+            position: relative;
+            background: #111111;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .groupbox legend {
+            position: absolute;
+            top: -7px;
+            left: 8px;
+            background: #111111;
+            padding: 0 5px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #71717a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Form Elements */
+        .file-drop {
+            border: 1px dashed #3f3f46;
+            background: #141417;
+            text-align: center;
+            padding: 24px 10px;
+            cursor: pointer;
+            color: #71717a;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            transition: 0.2s;
+        }
+        .file-drop:hover { border-color: #38bdf8; color: #38bdf8; }
+
+        .btn {
+            width: 100%;
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            color: #a1a1aa;
+            padding: 6px;
+            font-size: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            border-radius: 2px;
+            transition: 0.2s;
+        }
+        .btn:hover { background: #27272a; color: #e4e4e7; }
+        .btn.accent { border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+        .btn.accent:hover { background: rgba(56, 189, 248, 0.15); }
+
+        /* Key Value Pairs */
+        .kv-pair {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed #27272a;
+        }
+        .kv-pair:last-child { border-bottom: none; }
+        .kv-key { color: #71717a; }
+        .kv-val { color: #d4d4d8; font-family: "JetBrains Mono", monospace; font-size: 10px; }
+
+        .readonly-input {
+            width: 100%;
+            background: #0d0d0d;
+            border: 1px solid #27272a;
+            color: #71717a;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 9.5px;
+            padding: 5px;
+            margin-top: 3px;
+            border-radius: 2px;
+        }
+
+        /* Tabular Data */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 10px;
+        }
+        .data-table th, .data-table td {
+            padding: 5px 6px;
+            text-align: left;
+            border-bottom: 1px solid #1f1f22;
+        }
+        .data-table th { color: #71717a; font-family: "Inter", sans-serif; font-weight: 600; text-transform: uppercase; font-size: 9px; }
+        .data-table td { color: #a1a1aa; }
+
+        /* Log Entry Flexbox (Fixes Text Alignment) */
+        .log-entry { display: flex; gap: 6px; margin-bottom: 6px; }
+        .log-icon { flex-shrink: 0; }
+        .log-text { flex: 1; word-break: break-word; }
+
+        /* Tree View (Imports) */
+        .tree-node { margin-bottom: 6px; }
+        .tree-header { cursor: pointer; color: #38bdf8; font-family: "JetBrains Mono", monospace; font-size: 10px; padding: 2px 0; user-select: none; }
+        .tree-header:hover { color: #7dd3fc; }
+        .tree-children { padding-left: 12px; display: none; border-left: 1px solid #27272a; margin-left: 4px; margin-top: 4px; }
+        .tree-item { padding: 3px 0 3px 6px; font-family: "JetBrains Mono", monospace; font-size: 10px; color: #a1a1aa; }
+        .tree-item.flagged { color: #f43f5e; font-weight: 600; }
+
+        /* Microsoft API Links */
+        .tree-item a { color: inherit; text-decoration: none; transition: 0.1s; }
+        .tree-item a:hover { color: #38bdf8; text-decoration: underline; }
+
+        /* Footer Status */
+        .status-bar {
+            padding: 6px 12px;
+            background: #0d0d0d;
+            border-top: 1px solid #1f1f22;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #52525b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #71717a;
+            margin-right: 6px;
+            box-shadow: 0 0 4px currentColor;
+        }
+        .status-indicator.ready { background: #38bdf8; }
+        .status-indicator.loading { background: #f59e0b; animation: pulse 1s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="menu">
+    <div class="title-bar">
+        <span>PEScanner</span>
+        <span style="color: #71717a">root@localhost</span>
+    </div>
+    <div class="content-area">
+        <!-- Sidebar Navigation -->
+        <div class="tabs">
+            <div class="tab active" data-target="tab-scanner">Dashboard</div>
+            <div class="tab" data-target="tab-sections">Sections</div>
+            <div class="tab" data-target="tab-imports">Imports</div>
+        </div>
+
+        <!-- Main Viewport -->
+        <div class="main-content">
+
+            <!-- TAB: DASHBOARD -->
+            <div id="tab-scanner" class="tab-pane active">
+                <div class="col">
+                    <div class="groupbox">
+                        <legend>Target Acquisition</legend>
+                        <div class="file-drop" id="dropzone">
+                            <span id="drop-text">click or drag .exe / .dll</span>
+                            <input type="file" id="fileInput" accept=".exe,.dll" style="display:none;">
+                        </div>
+                        <button class="btn accent" onclick="document.getElementById('fileInput').click()">Select Binary</button>
+                    </div>
+
+                    <div class="groupbox">
+                        <legend>File Information</legend>
+                        <div class="kv-pair"><span class="kv-key">Status</span><span class="kv-val" id="resStatus" style="color:#71717a">waiting for file</span></div>
+                        <div class="kv-pair"><span class="kv-key">Architecture</span><span class="kv-val" id="resArch">-</span></div>
+                        <div class="kv-pair"><span class="kv-key">Size</span><span class="kv-val" id="resSize">-</span></div>
+                        <div class="kv-pair"><span class="kv-key">Entry Point</span><span class="kv-val" id="resEntryPoint">-</span></div>
+                        <div style="margin-top: 8px;">
+                            <span class="kv-key" style="display:block; font-size:9px; text-transform:uppercase;">SHA-256 Hash</span>
+                            <input type="text" class="readonly-input" id="resSha256" readonly value="-" onclick="this.select()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col">
+                    <div class="groupbox" style="flex: 1; overflow:hidden;">
+                        <legend>Heuristics Log</legend>
+                        <div id="warningsList" style="flex:1; overflow-y:auto; color: #71717a; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; line-height: 1.6; padding: 2px;">
+                            <div class="log-entry"><span class="log-icon" style="color:#a1a1aa">[+]</span><span class="log-text">Engine initialized.</span></div>
+                            <div class="log-entry"><span class="log-icon" style="color:#a1a1aa">[+]</span><span class="log-text">Waiting for binary input...</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SECTIONS -->
+            <div id="tab-sections" class="tab-pane">
+                <div class="col">
+                    <div class="groupbox" style="flex: 1;">
+                        <legend>Memory Sections (Entropy)</legend>
+                        <div style="flex:1; overflow-y:auto;">
+                            <table class="data-table">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>V.Size</th>
+                                    <th>RVA</th>
+                                    <th>R.Size</th>
+                                    <th>Entropy</th>
+                                    <th>Flags</th>
+                                </tr>
+                                </thead>
+                                <tbody id="sectionsBody">
+                                <tr><td colspan="6" style="text-align:center; color:#52525b; padding:20px;">No binary loaded</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: IMPORTS -->
+            <div id="tab-imports" class="tab-pane">
+                <div class="col">
+                    <div class="groupbox" style="flex: 1;">
+                        <legend>Import Address Table (IAT)</legend>
+                        <div id="importsContainer" style="flex:1; overflow-y:auto; padding: 4px;">
+                            <div style="text-align:center; color:#52525b; padding:20px; font-family: 'Inter', sans-serif;">No binary loaded</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Status -->
+    <div class="status-bar">
+        <div>
+            <span class="status-indicator" id="statusDot"></span>
+            <span id="statusText">idle</span>
+        </div>
+        <div>[ Automated PE Scanner v1.1 ]</div>
+    </div>
+</div>
+
+<script>
+    // Tab Navigation Logic
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.getAttribute('data-target')).classList.add('active');
+        });
+    });
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    const SUSPICIOUS_APIS = new Set([
+        "VirtualAlloc", "VirtualAllocEx", "WriteProcessMemory",
+        "CreateRemoteThread", "SetWindowsHookEx", "LoadLibraryA",
+        "GetProcAddress", "IsDebuggerPresent"
+    ]);
+
+    // Drag-and-drop Logic
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = '#38bdf8'; });
+    dropzone.addEventListener('dragleave', () => dropzone.style.borderColor = '#3f3f46');
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#3f3f46';
+        if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) uploadFile(fileInput.files[0]);
+    });
+
+    async function uploadFile(file) {
+        statusDot.className = 'status-indicator loading';
+        statusText.textContent = 'parsing headers...';
+        document.getElementById('resStatus').textContent = 'Analyzing...';
+        document.getElementById('resStatus').style.color = '#38bdf8';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/analyze/upload', { method: 'POST', body: formData });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ message: res.statusText }));
+                throw new Error(err.message || err.error || 'Unknown error');
+            }
+            const data = await res.json();
+            renderReport(data);
+        } catch (e) {
+            document.getElementById('resStatus').textContent = 'FAILED';
+            document.getElementById('resStatus').style.color = '#f43f5e';
+            logError(e.message);
+            statusDot.className = 'status-indicator';
+            statusText.textContent = 'error';
+        }
+    }
+
+    function renderReport(data) {
+        // Core Info
+        document.getElementById('resStatus').textContent = 'PARSED';
+        document.getElementById('resStatus').style.color = '#10b981';
+        document.getElementById('resSha256').value = data.sha256 || 'N/A';
+        document.getElementById('resArch').textContent = data.architecture || 'Unknown';
+        document.getElementById('resSize').textContent = (data.fileSize / 1024).toFixed(2) + ' KB';
+        document.getElementById('resEntryPoint').textContent = '0x' + (data.entryPointAddr || 0).toString(16).toUpperCase();
+
+        // Warnings / Heuristics (Using new Flexbox layout to fix wrapping)
+        const warnList = document.getElementById('warningsList');
+        warnList.innerHTML = `<div class="log-entry"><span class="log-icon" style="color:#a1a1aa;">[+]</span><span class="log-text">Binary loaded successfully.</span></div>`;
+        if (data.warnings && data.warnings.length > 0) {
+            data.warnings.forEach(w => {
+                warnList.innerHTML += `<div class="log-entry"><span class="log-icon" style="color:#f43f5e;">[!]</span><span class="log-text">${escapeHtml(w)}</span></div>`;
+            });
+        } else {
+            warnList.innerHTML += `<div class="log-entry"><span class="log-icon" style="color:#10b981;">[✓]</span><span class="log-text">Clean. No heuristics triggered.</span></div>`;
+        }
+
+        // Sections
+        const secBody = document.getElementById('sectionsBody');
+        secBody.innerHTML = '';
+        (data.sections || []).forEach(sec => {
+            const isHigh = sec.entropy > 7.2;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:#e4e4e7">${escapeHtml(sec.name)}</td>
+                <td>${sec.virtualSize}</td>
+                <td>0x${sec.virtualAddress.toString(16).toUpperCase()}</td>
+                <td>${sec.rawSize}</td>
+                <td style="color:${isHigh ? '#f43f5e' : '#a1a1aa'}">${sec.entropy.toFixed(2)}</td>
+                <td style="color:${isHigh ? '#f43f5e' : '#10b981'}">${isHigh ? 'PACKED' : 'OK'}</td>
+            `;
+            secBody.appendChild(tr);
+        });
+
+        // Imports Tree with Microsoft API Links
+        const impContainer = document.getElementById('importsContainer');
+        impContainer.innerHTML = '';
+        (data.imports || []).forEach(dll => {
+            const node = document.createElement('div');
+            node.className = 'tree-node';
+
+            const header = document.createElement('div');
+            header.className = 'tree-header';
+            header.innerHTML = `[+] ${escapeHtml(dll.dllName)} <span style="color:#52525b;font-family:'Inter',sans-serif">(${dll.functions.length})</span>`;
+
+            const children = document.createElement('div');
+            children.className = 'tree-children';
+
+            dll.functions.forEach(fn => {
+                const item = document.createElement('div');
+                item.className = 'tree-item';
+
+                // Construct the link to Microsoft Learn
+                const msLink = `https://learn.microsoft.com/en-us/search/?terms=${encodeURIComponent(fn)}`;
+                const linkHtml = `<a href="${msLink}" target="_blank" title="Search ${escapeHtml(fn)} on Microsoft Docs">${escapeHtml(fn)}</a>`;
+
+                if (SUSPICIOUS_APIS.has(fn)) {
+                    item.classList.add('flagged');
+                    item.innerHTML = `${linkHtml} <span style="opacity: 0.8; font-size: 9px;">[SUSPICIOUS]</span>`;
+                } else {
+                    item.innerHTML = linkHtml;
+                }
+                children.appendChild(item);
+            });
+
+            header.onclick = () => {
+                const isOpen = children.style.display === 'block';
+                children.style.display = isOpen ? 'none' : 'block';
+                header.innerHTML = `[${isOpen ? '-' : '+'}] ${escapeHtml(dll.dllName)} <span style="color:#52525b;font-family:'Inter',sans-serif">(${dll.functions.length})</span>`;
+            };
+
+            node.appendChild(header);
+            node.appendChild(children);
+            impContainer.appendChild(node);
+        });
+
+        statusDot.className = 'status-indicator ready';
+        statusText.textContent = 'ready';
+    }
+
+    function logError(msg) {
+        document.getElementById('warningsList').innerHTML += `<div class="log-entry"><span class="log-icon" style="color:#f43f5e;">[ERROR]</span><span class="log-text">${escapeHtml(msg)}</span></div>`;
+    }
+
+    function escapeHtml(str) {
+        return (str || '').replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag] || tag));
+    }
+</script>
+
+</body>
+</html>
